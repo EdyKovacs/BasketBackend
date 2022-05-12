@@ -1,0 +1,40 @@
+version: '3.4'
+
+networks:
+  basketbackend-dev:
+    driver: bridge 
+
+services:
+  postgres_image:
+    image: postgres:latest
+    ports:
+      - "5432"
+    restart: always
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+      - ./Misc/DbScripts:/docker-entrypoint-initdb.d/
+    environment:
+      POSTGRES_USER: "someuser"
+      POSTGRES_PASSWORD: "somepassword"
+      POSTGRES_DB: "basketdb"
+    networks:
+      - basketbackend-dev
+
+  basketbackend:
+    image: basketbackend:latest
+    depends_on:
+      - "postgres_image"
+    links:
+      - "postgres_image"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"     
+    environment:
+      DB_CONN_STRING: "host=postgres_image;port=5432;database=basketdb;username=someuser;password=somepassword"
+    networks:
+      - basketbackend-dev
+
+volumes:
+  db_volume:
